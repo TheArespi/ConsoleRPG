@@ -135,7 +135,7 @@ int getDistance(element e1,  element e2){
 
 void changeView(element e1, element e2, int *viewMode){
     if (*viewMode == moveMode){
-       if (getDistance(e1,e2) <= 1)
+       if (getDistance(e1,e2) <= 1 && e2.health > 0)
             *viewMode = battleMode;
     }
 }
@@ -201,47 +201,94 @@ void drawAttackOption(){
     }
 }
 
-int playerAttack(element *enemy,char move){
+void playerAttack(element *enemy,char move){
     attack *attackList  = getAllAttack();
     switch(move){
         case '0':
-            if ((*enemy).health > attackList[0].damage){
+            if ((*enemy).health > attackList[0].damage)
                 (*enemy).health -=  attackList[0].damage;
-                return 0;
-            }else
-                return 1;
+            else
+                (*enemy).health = 0;
             break;
         case '1':
-            if ((*enemy).health > attackList[1].damage){
+            if ((*enemy).health > attackList[1].damage)
                 (*enemy).health -=  attackList[1].damage;
-                return 0;
-            }else
-                return 1;
+            else
+                (*enemy).health = 0;
             break;
         case '2':
-            if ((*enemy).health > attackList[2].damage){
+            if ((*enemy).health > attackList[2].damage)
                 (*enemy).health -=  attackList[2].damage;
-                return 0;
-            }else
-                return 1;
+            else
+                (*enemy).health = 0;
             break;
         case '3':
-            if ((*enemy).health > attackList[3].damage){
+            if ((*enemy).health > attackList[3].damage)
                 (*enemy).health -=  attackList[3].damage;
-                return 0;
-            }else
-                return 1;
+            else
+                (*enemy).health = 0;
             break;
     }
     free(attackList);
-    return 0;
+}
+
+void moveEnemy(int dungeon[dlength][dwidth],element *enemy, element player){
+    int xdistance = abs(player.elementPos.x - (*enemy).elementPos.x);
+    int ydistance = abs(player.elementPos.y - (*enemy).elementPos.y);
+
+    int newx = (*enemy).elementPos.x;
+    int newy = (*enemy).elementPos.y;
+
+    if (xdistance > ydistance){
+            if ((*enemy).elementPos.x > player.elementPos.x){
+
+                if (dungeon[(*enemy).elementPos.y][(*enemy).elementPos.x-1] == 0){
+                    newx--;
+                }else{
+                    if ((*enemy).elementPos.y > player.elementPos.y)
+                        newy++;
+                    else
+                        newy--;
+                }
+            } else {
+                if (dungeon[(*enemy).elementPos.y][(*enemy).elementPos.x+1] == 0)
+                    newx++;
+                else{
+                    if ((*enemy).elementPos.y > player.elementPos.y)
+                        newy++;
+                    else
+                        newy--;
+                }
+            }
+    } else {
+        if ((*enemy).elementPos.y > player.elementPos.y){
+                if (dungeon[(*enemy).elementPos.y-1][(*enemy).elementPos.x] == 0)
+                    newy--;
+                else{
+                    if ((*enemy).elementPos.x > player.elementPos.x)
+                        newx++;
+                    else
+                        newx--;
+                }
+            } else {
+                if (dungeon[(*enemy).elementPos.y+1][(*enemy).elementPos.x] == 0)
+                    newy++;
+                else{
+                    if ((*enemy).elementPos.x > player.elementPos.x)
+                        newx++;
+                    else
+                        newx--;
+                }
+            }
+    }
+    dungeon[(*enemy).elementPos.y][(*enemy).elementPos.x] = 0;
+    dungeon[newy][newx] = 3;
 }
 
 int main(){
 
     int dungeon[dlength][dwidth];
     int viewMode = moveMode;
-    int enemyDead = 0;
     char response;
 
     //player stuff
@@ -273,17 +320,19 @@ int main(){
             drawAttackOption();
         }
         response = getch();
-        if (viewMode == moveMode)
+        if (viewMode == moveMode){
             movePlayer(dungeon,response,&player.elementPos);
-        else {
-            enemyDead = playerAttack(&enemy,response);
-            if (enemyDead){
-                dungeon[enemy.elementPos.y][enemy.elementPos.x] = 0;
+            if (getDistance(player,enemy) <= 7)
+                moveEnemy(dungeon,&enemy,player);
+        } else {
+            playerAttack(&enemy,response);
+            if (enemy.health == 0){
                 viewMode = moveMode;
+                dungeon[enemy.elementPos.y][enemy.elementPos.x] = 0;
             }
         }
 
-    }while(response != 0);
+    }while(response != 'e');
 
     return 0;
 }
